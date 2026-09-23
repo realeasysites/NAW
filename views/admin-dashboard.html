@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build requests · Nappi Autoworks</title><link rel="icon" href="/images/favicon.png">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#edeeea;font-family:system-ui,sans-serif;color:#1c1d1f}
+header{background:#1c1d1f;color:#edeeea;display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:3px solid #c9a25a}
+header img{width:44px;height:44px}header h1{font-size:18px;margin:0;flex:1}
+header button{background:none;border:1px solid #8a8f94;color:#edeeea;padding:7px 14px;border-radius:4px;cursor:pointer}
+main{max-width:1100px;margin:0 auto;padding:20px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.bar button{border:1px solid #b8bcbf;background:#fff;padding:7px 12px;border-radius:20px;cursor:pointer;font-size:14px}
+.bar button.on{background:#1c1d1f;color:#fff;border-color:#1c1d1f}
+.lead{background:#fff;border-radius:6px;padding:16px 18px;margin-bottom:12px;border-left:4px solid #8a8f94}
+.lead[data-s="new"]{border-left-color:#c9a25a}.lead[data-s="booked"],.lead[data-s="in the shop"]{border-left-color:#3d6fa8}.lead[data-s="done"]{border-left-color:#4f8a5b}
+.top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.top h2{margin:0;font-size:18px}.when{color:#5f6468;font-size:13px}
+dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px 18px;margin:12px 0}
+dt{font-size:12px;color:#5f6468}dd{margin:0;font-size:15px}
+.msg{white-space:pre-wrap;background:#f5f5f2;padding:10px;border-radius:4px;font-size:14px}
+.act{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+select,textarea{font:inherit;padding:7px;border:1px solid #b8bcbf;border-radius:4px}
+textarea{flex:1;min-width:220px;min-height:38px}
+.save{background:#1c1d1f;color:#fff;border:0;padding:8px 14px;border-radius:4px;cursor:pointer}
+.del{background:none;border:0;color:#a33;cursor:pointer;font-size:13px}
+.empty{text-align:center;padding:60px 20px;color:#5f6468}
+a{color:#3d6fa8}
+</style></head><body>
+<header><img src="/images/logo-sm.jpg" alt=""><h1>Build requests</h1>
+<form method="post" action="/admin/logout"><button>Log out</button></form></header>
+<main><div class="bar" id="bar"></div><div id="list"></div></main>
+<script>
+let data={leads:[],statuses:[]},filter='all';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function load(){const r=await fetch('/admin/api/leads');if(r.status===401)return location='/admin/login';data=await r.json();render()}
+function render(){
+ const counts={};data.leads.forEach(l=>counts[l.status]=(counts[l.status]||0)+1);
+ document.getElementById('bar').innerHTML=['all',...data.statuses].map(s=>`<button class="${s===filter?'on':''}" data-f="${s}">${s} (${s==='all'?data.leads.length:(counts[s]||0)})</button>`).join('');
+ const rows=data.leads.filter(l=>filter==='all'||l.status===filter);
+ document.getElementById('list').innerHTML=rows.length?rows.map(l=>`
+ <article class="lead" data-s="${esc(l.status)}"><div class="top"><h2>${esc(l.name)}</h2><span class="when">${new Date(l.created_at+'Z').toLocaleString()}</span></div>
+ <dl><div><dt>Phone</dt><dd>${l.phone?`<a href="tel:${esc(l.phone)}">${esc(l.phone)}</a>`:'—'}</dd></div>
+ <div><dt>Email</dt><dd>${l.email?`<a href="mailto:${esc(l.email)}">${esc(l.email)}</a>`:'—'}</dd></div>
+ <div><dt>Vehicle</dt><dd>${esc(l.vehicle)||'—'}</dd></div><div><dt>Project</dt><dd>${esc(l.project_type)||'—'}</dd></div>
+ <div><dt>Budget</dt><dd>${esc(l.budget)||'—'}</dd></div><div><dt>Timeline</dt><dd>${esc(l.timeline)||'—'}</dd></div></dl>
+ ${l.message?`<div class="msg">${esc(l.message)}</div>`:''}
+ <div class="act"><select data-id="${l.id}" class="st">${data.statuses.map(s=>`<option ${s===l.status?'selected':''}>${s}</option>`).join('')}</select>
+ <textarea data-id="${l.id}" class="nt" placeholder="Shop notes">${esc(l.notes)}</textarea>
+ <button class="save" data-id="${l.id}">Save</button><button class="del" data-id="${l.id}">Delete</button></div></article>`).join('')
+ :`<p class="empty">No ${filter==='all'?'':filter+' '}requests yet. New ones from the website land here.</p>`;
+}
+document.addEventListener('click',async e=>{
+ const t=e.target;
+ if(t.dataset.f){filter=t.dataset.f;render()}
+ if(t.classList.contains('save')){const id=t.dataset.id;
+  await fetch('/admin/api/leads/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:document.querySelector(`.st[data-id="${id}"]`).value,notes:document.querySelector(`.nt[data-id="${id}"]`).value})});
+  t.textContent='Saved';setTimeout(load,600)}
+ if(t.classList.contains('del')&&confirm('Delete this request for good?')){await fetch('/admin/api/leads/'+t.dataset.id,{method:'DELETE'});load()}
+});
+load();
+</script></body></html>
