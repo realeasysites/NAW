@@ -8,7 +8,7 @@ npm install
 cp .env.example .env   # fill in values
 npm start              # http://localhost:3000
 ```
-Admin dashboard: `/admin` (login from ADMIN_USER / ADMIN_PASSWORD).
+Admin dashboard: `/admin` (password only — ADMIN_PASSWORD).
 
 ## Deploy on Render
 - New Web Service from the GitHub repo. If the code sits in a subfolder, set Root Directory to that folder.

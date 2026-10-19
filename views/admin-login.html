@@ -12,10 +12,9 @@ button{margin-top:20px;width:100%;padding:12px;border:0;border-radius:4px;backgr
 </style></head><body>
 <form method="post" action="/admin/login">
 <img src="/images/logo-sm.jpg" alt="Nappi Autoworks">
-<label for="u">Username</label><input id="u" name="username" autocomplete="username" required>
-<label for="p">Password</label><input id="p" name="password" type="password" autocomplete="current-password" required>
+<label for="p">Password</label><input id="p" name="password" type="password" autofocus autocomplete="current-password" required>
 <button type="submit">Log in</button>
-<p class="err" id="err">That username and password don't match. Try again.</p>
+<p class="err" id="err">That password didn't work. Try again.</p>
 </form>
 <script>if(location.search.includes('error'))document.getElementById('err').style.display='block'</script>
 </body></html>
